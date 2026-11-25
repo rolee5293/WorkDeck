@@ -1,38 +1,42 @@
-# Codex Workbench Demo
+# WorkDeck
 
-A local workbench for repeatable projects. Start a conversation from a workflow, reopen its history, and review task changes before applying them.
+A local Codex skill and product manager simulation. Start a conversation from a workflow, reopen its history, and review simulated task changes before applying them.
 
-![Fieldnotes demo showing workflow history, a conversation, and a simulated task update](preview.png)
+![WorkDeck showing the fictional Fern Notes beta decision and an example task update](preview.png)
 
-## Run the demo
+## Try the product manager demo
 
-Clone the repo and serve the bundled assets with Python 3.
+Fern Notes is a fictional team notes app. Walk through five decisions about its offline drafts beta.
+
+| Workflow | Example decision |
+| --- | --- |
+| Customer discovery | Decide which interview patterns need another round of evidence. |
+| Prioritization | Compare offline drafts with shared editing for the beta. |
+| Sprint planning | Define acceptance criteria for recovering a draft after a force-quit. |
+| Launch readiness | Decide when to expand the beta and when to pause it. |
+| Metrics review | Interpret first-cohort adoption and investigate failed recoveries. |
+
+Clone or download this repository. From its root, run:
 
 ```bash
-git clone https://github.com/rolee5293/codex-workbench-demo.git
-cd codex-workbench-demo
-python3 -m http.server 4387 --bind 127.0.0.1 --directory local-workbench-demo/assets
+python3 -m http.server 4387 --bind 127.0.0.1 --directory workdeck/assets
 ```
 
-Open [localhost:4387](http://127.0.0.1:4387). Select **Launch checklist** and send **List tasks**. Use **History** to reopen a conversation. Try **Preview update**, then apply or cancel it.
+Open [localhost:4387](http://127.0.0.1:4387). Choose **Launch readiness** and send the sample prompt. Open **History** to revisit a conversation. Try **Preview update** to see the existing and proposed task status.
 
-All records are fictional. The browser uses scripted replies and simulated task operations. It stores state in local storage for this origin. **Reset demo** restores the starting records. The demo needs Python 3 and a modern browser. It requires no account, API key, or network service.
+The demo uses fictional product data, scripted replies, and simulated MCP operations. State is stored in the current browser. **Reset demo** restores the sample data. You only need Python 3 and a modern browser.
 
-## Use it as a Codex skill
+## Install the Codex skill
 
-Copy the `local-workbench-demo` directory into your project's `.agents/skills` folder.
+From this repository's root, copy `workdeck` into the destination project's `.agents/skills/` directory. When the destination is this repository, run:
 
 ```bash
 mkdir -p .agents/skills
-cp -R local-workbench-demo .agents/skills/
+cp -R workdeck .agents/skills/
 ```
 
-Open Codex in that project and ask: “Use `$local-workbench-demo` to launch the demo and show me how a task update is reviewed.” The skill can also help adapt a copy of the template. [Codex Skills documentation](https://developers.openai.com/codex/skills)
+Open Codex in the destination project and ask “Use `$workdeck` to walk me through the launch readiness demo.” [Codex Skills documentation](https://developers.openai.com/codex/skills)
 
-## What to adapt
-
-- Edit workflow names, sample records, and scripted replies in [app.js](local-workbench-demo/assets/app.js).
-- Edit the token values and component styles in [style.css](local-workbench-demo/assets/style.css).
-- Use a local backend for any real account integration, and keep the review step for proposed changes.
+Adapt the fiction, workflows, and reply scripts in [app.js](workdeck/assets/app.js). The layout lives in [style.css](workdeck/assets/style.css).
 
 [MIT License](LICENSE)

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="color-scheme" content="light">
-  <title>Fieldnotes Workbench · Codex Skill Demo</title>
+  <title>WorkDeck · Product Manager Demo</title>
   <link rel="stylesheet" href="./style.css">
   <script defer src="./app.js"></script>
 </head>
@@ -13,21 +13,21 @@
   <a class="skip" href="#main">Skip to workspace</a>
   <div class="shell">
     <aside class="rail">
-      <div class="identity"><span class="mark" aria-hidden="true">F</span><div><strong>Fieldnotes</strong><span>Workbench</span></div></div>
+      <div class="identity"><span class="mark" aria-hidden="true">W</span><div><strong>WorkDeck</strong><span>PM demo</span></div></div>
       <nav aria-label="Workspace"><button id="overview-nav" aria-current="page">Overview</button><button id="chat-nav">Conversations</button></nav>
       <button id="reset" class="reset">Reset demo</button>
     </aside>
     <main id="main">
       <section id="overview" aria-labelledby="overview-title">
         <header class="page-head">
-          <div><h1 id="overview-title" tabindex="-1">Workflows</h1><p>Start a conversation or revisit an earlier decision.</p></div>
+          <div><h1 id="overview-title" tabindex="-1">Fern Notes</h1><p>Practice product decisions for a fictional team notes app.</p></div>
           <span class="badge">Simulation</span>
         </header>
         <div id="workflows" class="workflow-grid"></div>
       </section>
       <section id="conversation" aria-labelledby="chat-heading" hidden>
         <header class="page-head">
-          <div><p id="scope" class="scope"></p><h1 id="chat-heading" tabindex="-1"></h1><p>Scripted replies and sample records stored in this browser.</p></div>
+          <div><p id="scope" class="scope"></p><h1 id="chat-heading" tabindex="-1"></h1><p>Fern Notes · Fictional product simulation</p></div>
           <button id="new-chat" class="button">New conversation</button>
         </header>
         <div class="chat-grid">
@@ -38,7 +38,7 @@
           <div class="chat frame">
             <div class="thread" id="thread">
               <ul id="messages" aria-label="Conversation messages"></ul>
-              <div id="empty-chat"><h2>What are you working on?</h2><p>Try <strong>List tasks</strong> to see the sample records.</p></div>
+              <div id="empty-chat"><h2>Start a product discussion</h2><p>Use the sample prompt or type <strong>List tasks</strong>.</p></div>
             </div>
             <section id="proposal" class="proposal" aria-labelledby="proposal-heading" hidden>
               <h3 id="proposal-heading" tabindex="-1"></h3>
@@ -51,7 +51,7 @@
             </form>
           </div>
           <aside class="records frame" aria-labelledby="records-heading">
-            <header><h2 id="records-heading">Sample tasks</h2><p>Simulated MCP</p></header>
+            <header><h2 id="records-heading">Product tasks</h2><p>Simulated MCP</p></header>
             <ul id="records-list"></ul>
             <div id="record-actions" class="record-actions"></div>
           </aside>

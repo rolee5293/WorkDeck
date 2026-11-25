@@ -1,37 +1,92 @@
 "use strict";
 
 const groups = [
-  { name: "Product Studio", description: "Plan releases and collect research.", workflows: [
-    { id: "launch", name: "Launch checklist", description: "Review shipment and setup tasks." },
-    { id: "research", name: "Product research", description: "Track questions for the next prototype." },
-  ] },
-  { name: "Operations", description: "Keep routine internal work on track.", workflows: [
-    { id: "commerce", name: "Store review", description: "Review catalog and trial orders." },
-    { id: "service", name: "Service upkeep", description: "Track routine service checks." },
-  ] },
+  {
+    name: "Discovery & strategy",
+    description: "Turn customer evidence into a product decision.",
+    workflows: [
+      {
+        id: "discovery",
+        name: "Customer discovery",
+        description: "Summarize interview patterns and open questions.",
+        prompt: "What did we learn about offline note-taking?",
+        answer: "Six of nine interviewees copied notes to another app when they lost signal. Four mentioned losing track of the latest draft. Test draft recovery with occasional users before treating this as a broader pattern.",
+        followUp: "Recruit three occasional offline users",
+      },
+      {
+        id: "prioritization",
+        name: "Prioritization",
+        description: "Compare scope against the next milestone.",
+        prompt: "What should we prioritize for the beta?",
+        answer: "Prioritize offline drafts and recovery. They address the clearest interview signal and fit one sprint. Defer shared editing offline until the team tests conflict recovery.",
+        followUp: "Record why shared editing is deferred",
+      },
+    ],
+  },
+  {
+    name: "Delivery & measurement",
+    description: "Plan the beta, decide whether to ship, and check results.",
+    workflows: [
+      {
+        id: "sprint",
+        name: "Sprint planning",
+        description: "Clarify scope, owners, and acceptance criteria.",
+        prompt: "What should the next sprint deliver?",
+        answer: "Ship local draft save and recovery in the next sprint. A draft should reopen after force-quit in airplane mode. Keep simultaneous edits out of scope until conflict handling is designed.",
+        followUp: "Add a force-quit recovery example",
+      },
+      {
+        id: "launch-readiness",
+        name: "Launch readiness",
+        description: "Review release blockers and rollout guardrails.",
+        prompt: "Are we ready to expand the offline-draft beta?",
+        answer: "Keep the beta at 12 teams until QA passes the reconnect cases. Expand to 30 teams after two days without confirmed draft loss. Pause rollout on any confirmed draft loss.",
+        followUp: "Schedule the 30-team rollout review",
+      },
+      {
+        id: "metrics",
+        name: "Metrics review",
+        description: "Check adoption and draft recovery after launch.",
+        prompt: "What does the first beta cohort tell us?",
+        answer: "In the sample cohort, 19 of 46 participants saved an offline draft. Of 27 drafts opened again after reconnecting, 25 restored without intervention. Inspect the two remaining cases before drawing a reliability conclusion.",
+        followUp: "Review the two unresolved recovery events",
+      },
+    ],
+  },
 ];
 
 const seed = {
   records: [
-    { id: "t-17", workflow: "launch", title: "Verify packing labels", owner: "Mira", status: "Open" },
-    { id: "t-24", workflow: "launch", title: "Review setup guide", owner: "Owen", status: "In review" },
-    { id: "t-31", workflow: "research", title: "Draft shelf-fit interview questions", owner: "Mira", status: "Open" },
-    { id: "t-44", workflow: "commerce", title: "Check trial order receipt", owner: "Nell", status: "In review" },
-    { id: "t-58", workflow: "service", title: "Schedule backup restore rehearsal", owner: "Owen", status: "Open" },
+    { id: "pm-11", workflow: "discovery", title: "Tag interview evidence by use case", owner: "Imani", status: "Done" },
+    { id: "pm-12", workflow: "discovery", title: "Validate draft recovery with occasional users", owner: "Jules", status: "Open" },
+    { id: "pm-21", workflow: "prioritization", title: "Compare offline drafts with shared editing", owner: "Jules", status: "In review" },
+    { id: "pm-22", workflow: "prioritization", title: "Estimate the cost of conflict recovery", owner: "Remy", status: "Open" },
+    { id: "pm-31", workflow: "sprint", title: "Define draft recovery acceptance criteria", owner: "Jules", status: "In review" },
+    { id: "pm-32", workflow: "sprint", title: "Build the local draft recovery path", owner: "Remy", status: "Open" },
+    { id: "pm-41", workflow: "launch-readiness", title: "Verify drafts survive reconnecting", owner: "Imani", status: "In review" },
+    { id: "pm-42", workflow: "launch-readiness", title: "Agree on beta rollout guardrails", owner: "Jules", status: "Open" },
+    { id: "pm-51", workflow: "metrics", title: "Audit the draft restored event", owner: "Remy", status: "In review" },
+    { id: "pm-52", workflow: "metrics", title: "Review first-cohort activation", owner: "Jules", status: "Open" },
   ],
-  chats: [
-    { id: "c-7", workflow: "launch", title: "Packing and setup handoff", messages: [
-      { author: "user", text: "What still needs attention before the sample kit ships?" },
-      { author: "demo", text: "Two tasks are on the launch checklist. Mira still needs to verify the packing labels. Owen has the setup guide in review." },
-    ] },
-    { id: "c-8", workflow: "research", title: "Prototype interview prep", messages: [
-      { author: "user", text: "Where did we leave the prototype interviews?" },
-      { author: "demo", text: "Mira is drafting shelf-fit questions for the foldable desk tray. Review those questions before scheduling interviews." },
-    ] },
-  ],
+  chats: groups.flatMap((group) => group.workflows.map((workflow) => ({
+    id: `seed-${workflow.id}`,
+    workflow: workflow.id,
+    title: {
+      discovery: "Interview synthesis",
+      prioritization: "Beta scope decision",
+      sprint: "Sprint scope and criteria",
+      "launch-readiness": "Offline drafts beta review",
+      metrics: "First cohort readout",
+    }[workflow.id],
+    messages: [
+      { author: "user", text: workflow.prompt },
+      { author: "demo", text: workflow.answer },
+    ],
+  }))),
 };
 
-const storageKey = "fieldnotes-workbench-demo-v1";
+const storageKey = "workdeck-pm-demo-v1";
+const defaultWorkflowId = "launch-readiness";
 const workflows = groups.flatMap((group) => group.workflows.map((workflow) => ({ ...workflow, group: group.name })));
 const workflowById = new Map(workflows.map((workflow) => [workflow.id, workflow]));
 const byId = (id) => document.getElementById(id);
@@ -39,7 +94,7 @@ const messageInput = byId("message");
 const resetDialog = byId("reset-dialog");
 
 let state = load();
-let workflowId = "launch";
+let workflowId = defaultWorkflowId;
 let chatId = null;
 let proposal = null;
 let proposalTrigger = null;
@@ -146,6 +201,7 @@ function renderConversation() {
   byId("scope").textContent = workflow.group;
   byId("chat-heading").textContent = workflow.name;
   byId("workflow-picker").value = workflowId;
+  messageInput.placeholder = workflow.prompt;
   byId("empty-chat").hidden = Boolean(chat?.messages.length);
   byId("messages").replaceChildren(...(chat?.messages ?? []).map((message) => {
     const isUser = message.author === "user";
@@ -208,7 +264,7 @@ function renderProposal() {
 function stage(kind, trigger) {
   const existing = visibleRecords()[0];
   const record = kind === "create"
-    ? { id: crypto.randomUUID(), workflow: workflowId, title: "Review follow-up notes", owner: "Nell", status: "Open" }
+    ? { id: crypto.randomUUID(), workflow: workflowId, title: workflowById.get(workflowId).followUp, owner: "Jules", status: "Open" }
     : existing;
   if (!record) return;
   proposal = { kind, record, nextStatus: record.status === "Done" ? "In review" : "Done" };
@@ -224,8 +280,11 @@ function scrollThread() {
 }
 
 function reply(text) {
-  const command = text.toLowerCase().replace(/[.!?]+$/, "").trim();
-  if (command !== "list tasks") return "This demo supports the prompt “List tasks.” Use the buttons in Sample tasks to preview a task change.";
+  const normalize = (value) => value.toLowerCase().replace(/[.!?]+$/, "").trim();
+  const workflow = workflowById.get(workflowId);
+  const command = normalize(text);
+  if (command === normalize(workflow.prompt)) return workflow.answer;
+  if (command !== "list tasks") return `Try “${workflow.prompt}” or “List tasks”. Use Product tasks to preview a change.`;
   const records = visibleRecords();
   if (!records.length) return "This workflow has no sample tasks.";
   return records.map((record) => `• ${record.title} — ${record.owner}, ${record.status}`).join("\n");
@@ -255,7 +314,7 @@ byId("workflow-picker").addEventListener("change", (event) => {
   openConversation(id, latestChat(id));
 });
 byId("suggestion").addEventListener("click", () => {
-  messageInput.value = "List tasks";
+  messageInput.value = workflowById.get(workflowId).prompt;
   messageInput.focus();
 });
 byId("composer").addEventListener("submit", (event) => {
@@ -299,7 +358,7 @@ byId("reset").addEventListener("click", () => {
 resetDialog.addEventListener("close", () => {
   if (resetDialog.returnValue !== "reset") return;
   state = structuredClone(seed);
-  workflowId = "launch";
+  workflowId = defaultWorkflowId;
   chatId = null;
   const saved = save();
   openOverview();
