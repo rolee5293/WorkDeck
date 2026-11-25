@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light">
+  <title>Fieldnotes Workbench · Codex Skill Demo</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to workspace</a>
+  <div class="shell">
+    <aside class="rail">
+      <div class="identity"><span class="mark" aria-hidden="true">F</span><div><strong>Fieldnotes</strong><span>Workbench</span></div></div>
+      <nav aria-label="Workspace"><button id="overview-nav" aria-current="page">Overview</button><button id="chat-nav">Conversations</button></nav>
+      <button id="reset" class="reset">Reset demo</button>
+    </aside>
+    <main id="main">
+      <section id="overview" aria-labelledby="overview-title">
+        <header class="page-head">
+          <div><h1 id="overview-title" tabindex="-1">Workflows</h1><p>Start a conversation or revisit an earlier decision.</p></div>
+          <span class="badge">Simulation</span>
+        </header>
+        <div id="workflows" class="workflow-grid"></div>
+      </section>
+      <section id="conversation" aria-labelledby="chat-heading" hidden>
+        <header class="page-head">
+          <div><p id="scope" class="scope"></p><h1 id="chat-heading" tabindex="-1"></h1><p>Scripted replies and sample records stored in this browser.</p></div>
+          <button id="new-chat" class="button">New conversation</button>
+        </header>
+        <div class="chat-grid">
+          <aside class="history frame" aria-labelledby="history-heading">
+            <header><h2 id="history-heading">History</h2><label for="workflow-picker">Workflow</label><select id="workflow-picker"></select></header>
+            <ul id="history-list"></ul>
+          </aside>
+          <div class="chat frame">
+            <div class="thread" id="thread">
+              <ul id="messages" aria-label="Conversation messages"></ul>
+              <div id="empty-chat"><h2>What are you working on?</h2><p>Try <strong>List tasks</strong> to see the sample records.</p></div>
+            </div>
+            <section id="proposal" class="proposal" aria-labelledby="proposal-heading" hidden>
+              <h3 id="proposal-heading" tabindex="-1"></h3>
+              <dl id="changes"></dl>
+              <div class="controls"><button id="cancel" class="button">Cancel</button><button id="approve" class="primary button">Apply simulated change</button></div>
+            </section>
+            <form id="composer" class="composer">
+              <label for="message">Message</label><textarea id="message" required rows="2" maxlength="180" placeholder="List tasks"></textarea>
+              <div class="controls"><button id="suggestion" type="button" class="button">Use sample prompt</button><button class="primary button" type="submit">Send</button></div>
+            </form>
+          </div>
+          <aside class="records frame" aria-labelledby="records-heading">
+            <header><h2 id="records-heading">Sample tasks</h2><p>Simulated MCP</p></header>
+            <ul id="records-list"></ul>
+            <div id="record-actions" class="record-actions"></div>
+          </aside>
+        </div>
+      </section>
+      <p class="sr-only" id="status" role="status"></p>
+    </main>
+  </div>
+  <dialog id="reset-dialog" aria-labelledby="reset-heading">
+    <h2 id="reset-heading">Reset the demo?</h2>
+    <p>This clears demo conversations and restores the sample tasks in this browser.</p>
+    <form method="dialog" class="controls"><button class="button" value="cancel" autofocus>Cancel</button><button class="primary button" value="reset">Reset demo</button></form>
+  </dialog>
+</body>
+</html>
