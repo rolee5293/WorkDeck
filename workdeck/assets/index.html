@@ -14,21 +14,33 @@
   <div class="shell">
     <aside class="rail">
       <div class="identity"><span class="mark" aria-hidden="true">W</span><div><strong>WorkDeck</strong><span>PM demo</span></div></div>
-      <nav aria-label="Workspace"><button id="overview-nav" aria-current="page">Overview</button><button id="chat-nav">Conversations</button></nav>
+      <nav aria-label="Workspace"><button id="overview-nav" aria-current="page">Thread board</button><button id="chat-nav">Conversations</button></nav>
       <button id="reset" class="reset">Reset demo</button>
     </aside>
     <main id="main">
       <section id="overview" aria-labelledby="overview-title">
-        <header class="page-head">
-          <div><h1 id="overview-title" tabindex="-1">Fern Notes</h1><p>Practice product decisions for a fictional team notes app.</p></div>
-          <span class="badge">Simulation</span>
+        <header class="page-head board-head">
+          <div><p class="scope">Fern Notes</p><h1 id="overview-title" tabindex="-1">Thread board</h1></div>
+          <button id="board-new" class="primary button">New thread</button>
         </header>
-        <div id="workflows" class="workflow-grid"></div>
+        <div class="board-tools">
+          <label class="board-search"><span class="sr-only">Search threads</span><input id="board-search" type="search" placeholder="Search threads"></label>
+          <label class="board-topic"><span class="sr-only">Filter by workflow</span><select id="board-topic"><option value="all">All workflows</option></select></label>
+        </div>
+        <div class="board-lanes" aria-label="Thread progress">
+          <section class="lane" data-lane="active" aria-labelledby="active-title"><header><h2 id="active-title">In progress</h2><span class="lane-count"></span></header><ul></ul><p class="lane-empty"></p></section>
+          <section class="lane" data-lane="action" aria-labelledby="action-title"><header><h2 id="action-title">Needs attention</h2><span class="lane-count"></span></header><ul></ul><p class="lane-empty"></p></section>
+          <section class="lane" data-lane="recent" aria-labelledby="recent-title"><header><h2 id="recent-title">Recent threads</h2><span class="lane-count"></span></header><ul></ul><p class="lane-empty"></p></section>
+        </div>
+        <details class="workflow-library">
+          <summary>Start from a workflow <span>Product management templates</span></summary>
+          <div id="workflows" class="workflow-grid"></div>
+        </details>
       </section>
       <section id="conversation" aria-labelledby="chat-heading" hidden>
         <header class="page-head">
-          <div><p id="scope" class="scope"></p><h1 id="chat-heading" tabindex="-1"></h1><p>Fern Notes · Fictional product simulation</p></div>
-          <button id="new-chat" class="button">New conversation</button>
+          <div><p id="scope" class="scope"></p><h1 id="chat-heading" tabindex="-1"></h1><p id="chat-stage" class="scope" hidden></p></div>
+          <button id="new-chat" class="button">New thread</button>
         </header>
         <div class="chat-grid">
           <aside class="history frame" aria-labelledby="history-heading">

@@ -96,8 +96,38 @@ const resetDialog = byId("reset-dialog");
 let state = load();
 let workflowId = defaultWorkflowId;
 let chatId = null;
-let proposal = null;
 let proposalTrigger = null;
+let wakeTimer;
+const boardSearch = byId("board-search");
+const boardTopic = byId("board-topic");
+const submit = byId("composer").querySelector('button[type="submit"]');
+const lanes = [...document.querySelectorAll("[data-lane]")];
+const emptyLanes = {
+  active: "Running threads appear here.",
+  action: "No simulated changes to review.",
+  recent: "Finished and saved threads appear here.",
+};
+
+function freshSeed() {
+  const fresh = structuredClone(seed);
+  const [sprint, metrics, launch] = ["sprint", "metrics", "launch-readiness"]
+    .map((workflow) => fresh.chats.find((chat) => chat.workflow === workflow));
+  const time = Date.now();
+  const initialRuns = [
+    [sprint, "Which acceptance criterion should QA verify first?", "Prioritize recovering a draft after force-quit in airplane mode. Compare the restored text against the last saved draft.", 14000],
+    [metrics, "Summarize the remaining measurement question.", "Audit the two unmatched recovery events before using the recovery rate as a rollout signal.", 20000],
+  ];
+  for (const [chat, question, text, delay] of initialRuns) {
+    chat.messages.push({ author: "user", text: question });
+    chat.pending = { text, readyAt: time + delay };
+  }
+  launch.proposal = {
+    kind: "update",
+    record: { ...fresh.records.find((record) => record.id === "pm-41") },
+    nextStatus: "Done",
+  };
+  return fresh;
+}
 
 function load() {
   try {
@@ -106,7 +136,7 @@ function load() {
   } catch {
     // The demo can run in memory when browser storage is unavailable.
   }
-  return structuredClone(seed);
+  return freshSeed();
 }
 
 function save() {
@@ -153,16 +183,44 @@ function latestChat(id) {
   return state.chats.find((chat) => chat.workflow === id)?.id ?? null;
 }
 
-function clearProposal() {
-  proposal = null;
-  proposalTrigger = null;
-  renderProposal();
+function threadStage(chat) {
+  if (chat?.pending) return { lane: "active", label: "Reply in progress" };
+  if (chat?.proposal) return { lane: "action", label: "Review change" };
+  return { lane: "recent", label: "Ready to continue" };
+}
+
+function scheduleReplies() {
+  clearTimeout(wakeTimer);
+  const time = Date.now();
+  let next = Infinity;
+  let changed = false;
+  let selectedFinished = false;
+  for (const chat of state.chats) {
+    if (!chat.pending) continue;
+    if (chat.pending.readyAt > time) {
+      next = Math.min(next, chat.pending.readyAt);
+      continue;
+    }
+    chat.messages.push({ author: "demo", text: chat.pending.text });
+    delete chat.pending;
+    changed = true;
+    selectedFinished ||= chat.id === chatId;
+  }
+  if (Number.isFinite(next)) wakeTimer = setTimeout(scheduleReplies, next - time);
+  if (!changed) return;
+  save();
+  renderBoard();
+  if (selectedFinished && !byId("conversation").hidden) {
+    renderConversation();
+    scrollThread();
+    announce("Demo reply ready.");
+  }
 }
 
 function openConversation(id, selectedChat = null) {
   workflowId = id;
   chatId = selectedChat;
-  clearProposal();
+  proposalTrigger = null;
   messageInput.value = "";
   renderConversation();
   byId("overview").hidden = true;
@@ -173,7 +231,47 @@ function openConversation(id, selectedChat = null) {
   scrollThread();
 }
 
+function renderBoard() {
+  const query = boardSearch.value.trim().toLowerCase();
+  const topic = boardTopic.value;
+  const focused = document.activeElement?.dataset.threadId;
+  const results = { active: [], action: [], recent: [] };
+  for (const chat of state.chats) {
+    const workflow = workflowById.get(chat.workflow);
+    if (!workflow || (topic !== "all" && chat.workflow !== topic)) continue;
+    const stage = threadStage(chat);
+    const text = [chat.title, workflow.name, stage.label].join(" ").toLowerCase();
+    if (query && !text.includes(query)) continue;
+    const li = make("li");
+    const card = button("", "board-card", () => openConversation(chat.workflow, chat.id));
+    card.dataset.threadId = chat.id;
+    const heading = make("span", null, "board-card-heading");
+    const arrow = make("span", "→");
+    arrow.setAttribute("aria-hidden", "true");
+    heading.append(make("strong", chat.title), arrow);
+    card.append(
+      heading,
+      make("span", workflow.name, "board-card-topic"),
+      make("span", stage.label, "board-card-status"),
+    );
+    li.append(card);
+    results[stage.lane].push(li);
+  }
+  for (const lane of lanes) {
+    const id = lane.dataset.lane;
+    const rows = results[id];
+    const list = lane.querySelector("ul");
+    list.replaceChildren(...rows);
+    lane.querySelector(".lane-count").textContent = rows.length;
+    const empty = lane.querySelector(".lane-empty");
+    empty.hidden = rows.length > 0;
+    empty.textContent = query || topic !== "all" ? "No matching threads." : emptyLanes[id];
+    if (focused) [...list.querySelectorAll("button")].find((item) => item.dataset.threadId === focused)?.focus({ preventScroll: true });
+  }
+}
+
 function renderOverview() {
+  renderBoard();
   const cards = groups.map((group) => {
     const card = make("article", null, "workflow-card");
     const header = make("header");
@@ -198,8 +296,11 @@ function renderOverview() {
 function renderConversation() {
   const workflow = workflowById.get(workflowId);
   const chat = currentChat();
-  byId("scope").textContent = workflow.group;
-  byId("chat-heading").textContent = workflow.name;
+  byId("scope").textContent = workflow.name + " · Fern Notes";
+  byId("chat-heading").textContent = chat?.title || "New thread";
+  messageInput.disabled = Boolean(chat?.pending);
+  submit.disabled = Boolean(chat?.pending);
+  byId("suggestion").disabled = Boolean(chat?.pending);
   byId("workflow-picker").value = workflowId;
   messageInput.placeholder = workflow.prompt;
   byId("empty-chat").hidden = Boolean(chat?.messages.length);
@@ -215,11 +316,14 @@ function renderConversation() {
     const row = make("li");
     const link = button(saved.title, "history-item", () => openConversation(workflowId, saved.id));
     if (saved.id === chatId) link.setAttribute("aria-current", "true");
+    const stage = threadStage(saved);
+    if (stage.lane !== "recent") link.append(make("small", stage.label, "history-running"));
     row.append(link);
     history.append(row);
   }
   if (!history.children.length) history.append(make("li", "No saved conversations yet.", "note"));
   renderRecords();
+  renderProposal();
 }
 
 function visibleRecords() {
@@ -249,6 +353,14 @@ function renderRecords() {
 
 function renderProposal() {
   const panel = byId("proposal");
+  const chat = currentChat();
+  const status = byId("chat-stage");
+  status.hidden = !chat;
+  if (chat) {
+    byId("chat-heading").textContent = chat.title;
+    status.textContent = threadStage(chat).label;
+  }
+  const proposal = chat?.proposal;
   panel.hidden = !proposal;
   if (!proposal) return;
   const { kind, record, nextStatus } = proposal;
@@ -267,7 +379,9 @@ function stage(kind, trigger) {
     ? { id: crypto.randomUUID(), workflow: workflowId, title: workflowById.get(workflowId).followUp, owner: "Jules", status: "Open" }
     : existing;
   if (!record) return;
-  proposal = { kind, record, nextStatus: record.status === "Done" ? "In review" : "Done" };
+  const chat = getChat("Task changes");
+  chat.proposal = { kind, record: { ...record }, nextStatus: record.status === "Done" ? "In review" : "Done" };
+  save();
   proposalTrigger = trigger;
   renderProposal();
   scrollThread();
@@ -294,10 +408,11 @@ for (const workflow of workflows) {
   const option = make("option", workflow.name);
   option.value = workflow.id;
   byId("workflow-picker").append(option);
+  boardTopic.append(option.cloneNode(true));
 }
 
 function openOverview() {
-  clearProposal();
+  proposalTrigger = null;
   renderOverview();
   byId("conversation").hidden = true;
   byId("overview").hidden = false;
@@ -306,6 +421,9 @@ function openOverview() {
   byId("overview-title").focus();
 }
 
+boardSearch.addEventListener("input", renderBoard);
+boardTopic.addEventListener("change", renderBoard);
+byId("board-new").addEventListener("click", () => openConversation(boardTopic.value === "all" ? workflowId : boardTopic.value));
 byId("overview-nav").addEventListener("click", openOverview);
 byId("chat-nav").addEventListener("click", () => openConversation(workflowId, chatId ?? latestChat(workflowId)));
 byId("new-chat").addEventListener("click", () => openConversation(workflowId));
@@ -322,34 +440,50 @@ byId("composer").addEventListener("submit", (event) => {
   const text = messageInput.value.trim();
   if (!text) return;
   const chat = getChat(text.slice(0, 76));
-  chat.messages.push({ author: "user", text }, { author: "demo", text: reply(text) });
+  if (chat.pending) return;
+  chat.messages.push({ author: "user", text });
+  chat.pending = { text: reply(text), readyAt: Date.now() + 5200 };
   const saved = save();
   messageInput.value = "";
-  clearProposal();
   renderConversation();
-  messageInput.focus();
+  scheduleReplies();
+  byId("chat-heading").focus();
   scrollThread();
-  announce(saved ? "Demo reply ready." : "Demo reply ready. Browser storage is unavailable.");
+  announce(saved ? "Demo reply in progress." : "Demo reply in progress. Browser storage is unavailable.");
 });
 byId("cancel").addEventListener("click", () => {
-  const trigger = proposalTrigger;
-  clearProposal();
-  trigger?.focus();
+  const chat = currentChat();
+  if (!chat?.proposal) return;
+  delete chat.proposal;
+  save();
+  renderProposal();
+  (proposalTrigger || byId("chat-heading")).focus();
+  proposalTrigger = null;
   announce("Change canceled. Sample tasks are unchanged.");
 });
 byId("approve").addEventListener("click", () => {
-  if (!proposal) return;
-  const { kind, record, nextStatus } = proposal;
-  clearProposal();
-  if (kind === "create") state.records.push(record);
-  if (kind === "update") record.status = nextStatus;
-  if (kind === "delete") state.records = state.records.filter((item) => item.id !== record.id);
-  getChat("Task changes").messages.push({ author: "demo", text: `Simulated ${kind} applied to “${record.title}”.` });
+  const chat = currentChat();
+  if (!chat?.proposal) return;
+  const { kind, record, nextStatus } = chat.proposal;
+  const current = state.records.find((item) => item.id === record.id);
+  const stale = kind === "create" ? Boolean(current) :
+    !current || current.status !== record.status || current.title !== record.title || current.owner !== record.owner;
+  delete chat.proposal;
+  proposalTrigger = null;
+  if (stale) {
+    chat.messages.push({ author: "demo", text: "The sample task changed. Preview the change again before applying it." });
+  } else {
+    if (kind === "create") state.records.push(record);
+    if (kind === "update") current.status = nextStatus;
+    if (kind === "delete") state.records = state.records.filter((item) => item.id !== record.id);
+    chat.messages.push({ author: "demo", text: `Simulated ${kind} applied to “${record.title}”.` });
+  }
   const saved = save();
   renderConversation();
   scrollThread();
   byId("record-actions").querySelector("button").focus();
-  announce(saved ? "Simulated change applied." : "Simulated change applied for this visit. Browser storage is unavailable.");
+  announce(stale ? "The sample task changed. Review it again." :
+    saved ? "Simulated change applied." : "Simulated change applied for this visit. Browser storage is unavailable.");
 });
 byId("reset").addEventListener("click", () => {
   resetDialog.returnValue = "";
@@ -357,7 +491,8 @@ byId("reset").addEventListener("click", () => {
 });
 resetDialog.addEventListener("close", () => {
   if (resetDialog.returnValue !== "reset") return;
-  state = structuredClone(seed);
+  state = freshSeed();
+  scheduleReplies();
   workflowId = defaultWorkflowId;
   chatId = null;
   const saved = save();
@@ -365,4 +500,6 @@ resetDialog.addEventListener("close", () => {
   announce(saved ? "Demo reset." : "Demo reset for this visit. Browser storage is unavailable.");
 });
 
+save();
+scheduleReplies();
 renderOverview();

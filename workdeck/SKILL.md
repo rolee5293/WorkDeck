@@ -1,6 +1,6 @@
 ---
 name: workdeck
-description: Run or adapt the WorkDeck product manager simulation with five product workflows, categorized conversation history, and previewable simulated MCP changes. Use when a user asks to launch WorkDeck or try its product manager walkthrough.
+description: Run or adapt the WorkDeck product manager simulation with five product workflows, a thread status board, and previewable simulated MCP changes. Use when a user asks to launch WorkDeck or try its product manager walkthrough.
 ---
 
 # WorkDeck
@@ -10,8 +10,8 @@ The browser demo is in [assets/](assets/). It uses a fictional product called Fe
 ## Launch and demonstrate
 
 1. Serve the skill's `assets/` directory on loopback. From the skill folder run `python3 -m http.server 4387 --bind 127.0.0.1 --directory assets`. Choose another local port if 4387 is already in use.
-2. Share the local URL. In the demo, open **Launch readiness** and choose **Use sample prompt**, then **Send**. Select **History** on the overview to reopen a seeded product decision.
-3. In **Product tasks**, preview a create, update, or delete. Compare the preview with the current sample record. Confirm or cancel, then check the task list.
+2. Share the local URL. Show the **In progress**, **Needs attention**, and **Recent threads** columns. Open the queued rollout change and review the affected task and status. Confirm or cancel it, then check the task list.
+3. Choose a template under **Start from a workflow** and send its sample prompt. Return to the board, start a second thread, and follow both as their scripted replies complete.
 
 WorkDeck uses scripted answers and simulated task changes. The browser stores the demo state for the current origin. **Reset demo** restores the seed records and conversations.
 

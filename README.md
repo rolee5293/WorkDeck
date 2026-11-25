@@ -1,8 +1,8 @@
 # WorkDeck
 
-A local Codex skill and product manager simulation. Start a conversation from a workflow, reopen its history, and review simulated task changes before applying them.
+A thread board for a local Codex skill and product manager simulation. See which threads are running, which decisions need review, and where to pick up prior work.
 
-![WorkDeck showing the fictional Fern Notes beta decision and an example task update](preview.png)
+![WorkDeck thread board showing running, review, and recent product threads for the fictional Fern Notes](preview.png)
 
 ## Try the product manager demo
 
@@ -22,7 +22,9 @@ Clone or download this repository. From its root, run:
 python3 -m http.server 4387 --bind 127.0.0.1 --directory workdeck/assets
 ```
 
-Open [localhost:4387](http://127.0.0.1:4387). Choose **Launch readiness** and send the sample prompt. Open **History** to revisit a conversation. Try **Preview update** to see the existing and proposed task status.
+Open [localhost:4387](http://127.0.0.1:4387). The board starts with two sample threads in progress and one simulated change to review. Open the change to compare the current and proposed values, then apply or cancel it.
+
+To run more than one thread, choose a template under **Start from a workflow** and send its sample prompt. Return to the board and start another thread. Open any card to see the conversation and its workflow history.
 
 The demo uses fictional product data, scripted replies, and simulated MCP operations. State is stored in the current browser. **Reset demo** restores the sample data. You only need Python 3 and a modern browser.
 
